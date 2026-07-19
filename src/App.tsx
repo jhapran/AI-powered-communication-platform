@@ -18,8 +18,6 @@ function RequireAuth({ children }: { children: React.ReactNode }) {
 }
 
 function LoginGate() {
-  const { user } = useApp();
-  if (user) return <Navigate to="/" replace />;
   return <Login />;
 }
 

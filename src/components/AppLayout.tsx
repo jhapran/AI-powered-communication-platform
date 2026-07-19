@@ -13,6 +13,7 @@ import {
   Menu,
   X,
   Plus,
+  ArrowLeft,
 } from "lucide-react";
 import { useApp } from "@/lib/store";
 import { cn } from "@/lib/utils";
@@ -96,24 +97,36 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
         <div className="mt-2 text-[11px] text-muted-foreground">{composedCount} storyboards published</div>
       </div>
 
-      <div className="flex items-center gap-3 border-t border-white/10 px-5 py-4">
-        <div className="btn-gradient flex h-9 w-9 items-center justify-center rounded-full text-sm font-bold text-white">
-          {user?.name?.[0]?.toUpperCase() ?? "U"}
-        </div>
-        <div className="min-w-0 flex-1">
-          <div className="truncate text-sm font-semibold text-white">{user?.name ?? "User"}</div>
-          <div className="truncate text-xs text-muted-foreground">{user?.email}</div>
-        </div>
+      <div className="border-t border-white/10 px-5 py-4">
         <button
           onClick={() => {
             logout();
             navigate("/login");
           }}
-          title="Sign out"
-          className="rounded-lg p-2 text-muted-foreground transition-colors hover:bg-white/10 hover:text-white"
+          className="mb-3 flex w-full items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-white/[0.06] hover:text-white"
         >
-          <LogOut className="h-4 w-4" />
+          <ArrowLeft className="h-4 w-4" />
+          Back to welcome
         </button>
+        <div className="flex items-center gap-3">
+          <div className="btn-gradient flex h-9 w-9 items-center justify-center rounded-full text-sm font-bold text-white">
+            {user?.name?.[0]?.toUpperCase() ?? "U"}
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="truncate text-sm font-semibold text-white">{user?.name ?? "User"}</div>
+            <div className="truncate text-xs text-muted-foreground">{user?.email}</div>
+          </div>
+          <button
+            onClick={() => {
+              logout();
+              navigate("/login");
+            }}
+            title="Sign out"
+            className="rounded-lg p-2 text-muted-foreground transition-colors hover:bg-white/10 hover:text-white"
+          >
+            <LogOut className="h-4 w-4" />
+          </button>
+        </div>
       </div>
     </div>
   );
