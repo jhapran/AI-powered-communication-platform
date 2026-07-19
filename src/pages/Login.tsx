@@ -21,7 +21,7 @@ export default function Login() {
 
   const doLogin = (asDemo = false) => {
     if (asDemo) {
-      login({ name: "Alex Rivera", email: "alex@expressa.app" });
+      login({ name: "Alex Rivera", email: "pranav@expressa.app" });
       navigate("/");
       return;
     }
