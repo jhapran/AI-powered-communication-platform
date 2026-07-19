@@ -12,7 +12,6 @@ import {
   Sparkles,
   Menu,
   X,
-  Plus,
   ArrowLeft,
 } from "lucide-react";
 import { useApp } from "@/lib/store";
@@ -46,17 +45,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
         </div>
       </div>
 
-      <button
-        onClick={() => {
-          navigate("/create");
-          onNavigate?.();
-        }}
-        className="btn-gradient mx-4 mb-5 flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-white transition-all flex-shrink-0"
-      >
-        <Plus className="h-4 w-4" /> New Storyboard
-      </button>
-
-      <nav className="flex-1 space-y-1 px-3 overflow-y-auto">
+      <nav className="flex-1 space-y-1 px-3">
         {NAV.map((item) => (
           <NavLink
             key={item.to}
