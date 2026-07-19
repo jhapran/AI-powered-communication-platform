@@ -125,12 +125,6 @@ export default function AppLayout() {
         <button onClick={() => setMobileOpen(true)} className="rounded-lg p-2 hover:bg-white/10">
           <Menu className="h-5 w-5" />
         </button>
-        <div className="flex items-center gap-2">
-          <div className="btn-gradient flex h-8 w-8 items-center justify-center rounded-lg">
-            <Sparkles className="h-4 w-4 text-white" />
-          </div>
-          <span className="font-extrabold tracking-tight">Expressa</span>
-        </div>
       </div>
 
       {/* Mobile drawer */}
