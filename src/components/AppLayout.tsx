@@ -8,7 +8,6 @@ import {
   AudioWaveform,
   Clapperboard,
   Settings as SettingsIcon,
-  LogOut,
   Menu,
   X,
   ArrowLeft,
@@ -86,25 +85,6 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
           <ArrowLeft className="h-4 w-4" />
           Back to welcome
         </button>
-        <div className="flex items-center gap-3">
-          <div className="btn-gradient flex h-9 w-9 items-center justify-center rounded-full text-sm font-bold text-white">
-            {user?.name?.[0]?.toUpperCase() ?? "U"}
-          </div>
-          <div className="min-w-0 flex-1">
-            <div className="truncate text-sm font-semibold text-white">{user?.name ?? "User"}</div>
-            <div className="truncate text-xs text-muted-foreground">{user?.email}</div>
-          </div>
-          <button
-            onClick={() => {
-              logout();
-              navigate("/login");
-            }}
-            title="Sign out"
-            className="rounded-lg p-2 text-muted-foreground transition-colors hover:bg-white/10 hover:text-white"
-          >
-            <LogOut className="h-4 w-4" />
-          </button>
-        </div>
       </div>
     </div>
   );
