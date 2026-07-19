@@ -9,7 +9,6 @@ import {
   Clapperboard,
   Settings as SettingsIcon,
   LogOut,
-  Sparkles,
   Menu,
   X,
   ArrowLeft,
@@ -35,16 +34,6 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex items-center gap-3 px-5 pb-6 pt-6 flex-shrink-0">
-        <div className="btn-gradient flex h-10 w-10 items-center justify-center rounded-xl shadow-lg">
-          <Sparkles className="h-5 w-5 text-white" />
-        </div>
-        <div>
-          <div className="text-[17px] font-extrabold tracking-tight text-white">Expressa</div>
-          <div className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground">AI Expression Platform</div>
-        </div>
-      </div>
-
       <nav className="flex-1 space-y-1 px-3">
         {NAV.map((item) => (
           <NavLink
