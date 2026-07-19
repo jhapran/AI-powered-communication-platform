@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router";
-import { Sparkles, ArrowRight, Clapperboard, UserCircle2, AudioWaveform, Presentation } from "lucide-react";
+import { ArrowRight, Clapperboard, UserCircle2, AudioWaveform, Presentation } from "lucide-react";
 import { useApp } from "@/lib/store";
 import hero from "@/assets/demo/hero.jpg";
 
@@ -38,18 +38,6 @@ export default function Login() {
       <div className="grid-bg relative flex items-center justify-center px-6 py-12">
         <div className="pointer-events-none absolute -left-32 top-1/4 h-96 w-96 rounded-full bg-violet-600/20 blur-[120px]" />
         <div className="w-full max-w-md">
-          <div className="mb-10 flex items-center gap-3">
-            <div className="btn-gradient flex h-11 w-11 items-center justify-center rounded-2xl shadow-lg">
-              <Sparkles className="h-5 w-5 text-white" />
-            </div>
-            <div>
-              <div className="text-xl font-extrabold tracking-tight">Expressa</div>
-              <div className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground">
-                AI Digital Expression Platform
-              </div>
-            </div>
-          </div>
-
           <h1 className="mb-3 text-4xl font-extrabold leading-tight tracking-tight">
             Turn <span className="text-gradient">thoughts</span> into visual stories
           </h1>
