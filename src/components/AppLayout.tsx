@@ -36,7 +36,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex items-center gap-3 px-5 pb-6 pt-6">
+      <div className="flex items-center gap-3 px-5 pb-6 pt-6 flex-shrink-0">
         <div className="btn-gradient flex h-10 w-10 items-center justify-center rounded-xl shadow-lg">
           <Sparkles className="h-5 w-5 text-white" />
         </div>
@@ -51,12 +51,12 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
           navigate("/create");
           onNavigate?.();
         }}
-        className="btn-gradient mx-4 mb-5 flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-white transition-all"
+        className="btn-gradient mx-4 mb-5 flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-white transition-all flex-shrink-0"
       >
         <Plus className="h-4 w-4" /> New Storyboard
       </button>
 
-      <nav className="flex-1 space-y-1 px-3">
+      <nav className="flex-1 space-y-1 px-3 overflow-y-auto">
         {NAV.map((item) => (
           <NavLink
             key={item.to}
