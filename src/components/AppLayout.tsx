@@ -26,7 +26,7 @@ const NAV = [
 ];
 
 function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
-  const { user, logout, projects } = useApp();
+  const { logout, projects } = useApp();
   const navigate = useNavigate();
   const composedCount = projects.filter((p) => p.status === "composed" || p.status === "generated").length;
   const creditsUsed = projects.reduce((acc, p) => acc + p.scenes.length, 0);
