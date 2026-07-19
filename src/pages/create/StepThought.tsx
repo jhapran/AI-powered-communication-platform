@@ -1,5 +1,7 @@
-import { ArrowRight, Lightbulb, Sparkles } from "lucide-react";
+import { useState } from "react";
+import { ArrowRight, KeyRound, Lightbulb, Loader2, Sparkles } from "lucide-react";
 import { SAMPLE_THOUGHTS } from "@/lib/aiEngine";
+import { getGroqApiKey, setGroqApiKey } from "@/lib/llmClient";
 import type { OutputFormat } from "@/types";
 import type { WizardData } from "./CreateWizard";
 import { cn } from "@/lib/utils";
@@ -15,12 +17,14 @@ const AUDIENCES = ["auto", "General audience", "Children (6–12)", "Students", 
 interface Props {
   data: WizardData;
   patch: (p: Partial<WizardData>) => void;
+  busy?: boolean;
   onAnalyze: () => void;
 }
 
-export default function StepThought({ data, patch, onAnalyze }: Props) {
+export default function StepThought({ data, patch, busy, onAnalyze }: Props) {
   const len = data.thought.trim().length;
   const valid = len >= 20;
+  const [apiKey, setApiKey] = useState(getGroqApiKey());
 
   return (
     <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
@@ -82,14 +86,51 @@ export default function StepThought({ data, patch, onAnalyze }: Props) {
 
         <button
           onClick={onAnalyze}
-          disabled={!valid}
+          disabled={!valid || busy}
           className={cn(
             "flex w-full items-center justify-center gap-2 rounded-xl px-6 py-4 text-sm font-bold transition-all sm:w-auto",
-            valid ? "btn-gradient text-white" : "cursor-not-allowed border border-white/10 bg-white/[0.03] text-muted-foreground"
+            valid && !busy ? "btn-gradient text-white" : "cursor-not-allowed border border-white/10 bg-white/[0.03] text-muted-foreground"
           )}
         >
-          <Sparkles className="h-4 w-4" /> Analyse my thought <ArrowRight className="h-4 w-4" />
+          {busy ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" /> Analysing{apiKey ? " with Groq AI" : ""}…
+            </>
+          ) : (
+            <>
+              <Sparkles className="h-4 w-4" /> Analyse my thought <ArrowRight className="h-4 w-4" />
+            </>
+          )}
         </button>
+
+        {/* AI settings */}
+        <div className="glass rounded-2xl p-6">
+          <div className="mb-2 flex items-center gap-2 text-sm font-bold">
+            <KeyRound className="h-4 w-4 text-cyan-300" /> AI engine
+          </div>
+          <p className="mb-3 text-xs leading-relaxed text-muted-foreground">
+            Add a free{" "}
+            <a href="https://console.groq.com/keys" target="_blank" rel="noreferrer" className="text-primary underline decoration-dotted underline-offset-2">
+              Groq API key
+            </a>{" "}
+            for real LLM-powered analysis and scene writing (Llama 3.3 70B). Without a key, the built-in local
+            simulator is used. Frame images are generated free via Pollinations FLUX — no key needed. The key is
+            stored only in your browser.
+          </p>
+          <input
+            type="password"
+            value={apiKey}
+            onChange={(e) => {
+              setApiKey(e.target.value);
+              setGroqApiKey(e.target.value);
+            }}
+            placeholder="gsk_…  (leave empty to use the local simulator)"
+            className="w-full rounded-xl border border-input bg-black/20 px-4 py-3 font-mono text-xs outline-none transition-colors placeholder:text-muted-foreground/50 focus:border-primary focus:ring-2 focus:ring-primary/30"
+          />
+          <div className={cn("mt-2 text-xs font-medium", apiKey.trim() ? "text-emerald-400" : "text-muted-foreground")}>
+            {apiKey.trim() ? "✓ Real AI planning enabled (Groq · Llama 3.3 70B)" : "Local simulation mode — story beats come from templates"}
+          </div>
+        </div>
       </div>
 
       {/* Samples */}
@@ -118,8 +159,9 @@ export default function StepThought({ data, patch, onAnalyze }: Props) {
           </button>
         ))}
         <div className="rounded-xl border border-dashed border-white/15 p-4 text-xs leading-relaxed text-muted-foreground">
-          The photosynthesis sample ships with frames rendered by a real image model. Everything else is generated
-          procedurally in your browser — that's the prototype's stand-in for the image-generation service.
+          The photosynthesis sample ships with pre-rendered frames. For your own thoughts, frames are generated
+          live by a real text-to-image model (Pollinations FLUX) — switch to procedural SVG frames in the
+          "Generate frames" step if you're offline.
         </div>
       </div>
     </div>

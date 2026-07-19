@@ -1,5 +1,6 @@
 import type { ArtStyle, Scene } from "@/types";
-import { mulberry32 } from "./aiEngine";
+import { mulberry32, STYLE_META } from "./aiEngine";
+import { getImageProvider } from "./llmClient";
 
 /* ------------------------------------------------------------------ */
 /*  Procedural storyboard frames — deterministic SVG concept art per   */
@@ -198,6 +199,27 @@ export function sceneFrameDataUrl(scene: Scene, style: ArtStyle, sceneNumber: nu
   return `data:image/svg+xml;utf8,${encodeURIComponent(sceneFrameSVG(scene, style, sceneNumber))}`;
 }
 
+/* ------------------------------------------------------------------ */
+/*  Real AI frames — Pollinations.ai (free, no API key, FLUX model).   */
+/*  The scene's visual prompt + art style descriptor becomes the       */
+/*  image prompt; scene.seed makes it reproducible and re-rollable.    */
+/* ------------------------------------------------------------------ */
+
+export function pollinationsImageUrl(scene: Scene, style: ArtStyle): string {
+  const meta = STYLE_META[style];
+  const prompt = `${scene.cameraAngle} — ${scene.visualPrompt} ${meta.descriptor}, ${scene.emotion.toLowerCase()} emotional tone. Negative: ${meta.negative}.`;
+  const params = new URLSearchParams({
+    width: "1200",
+    height: "800",
+    seed: String(Math.abs(scene.seed) % 1000000),
+    model: "flux",
+    nologo: "true",
+  });
+  return `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?${params.toString()}`;
+}
+
 export function sceneImage(scene: Scene, style: ArtStyle, index: number): string {
-  return scene.imageUrl ?? sceneFrameDataUrl(scene, style, index + 1);
+  if (scene.imageUrl) return scene.imageUrl; // bundled demo asset
+  if (getImageProvider() === "pollinations") return pollinationsImageUrl(scene, style);
+  return sceneFrameDataUrl(scene, style, index + 1);
 }

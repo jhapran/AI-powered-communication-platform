@@ -3,6 +3,7 @@ import { useNavigate } from "react-router";
 import { Check, Lightbulb, ScanSearch, ListTree, ImagePlay, LayoutGrid } from "lucide-react";
 import { useApp } from "@/lib/store";
 import { analyzeThought, generateOutline, SAMPLE_THOUGHTS } from "@/lib/aiEngine";
+import { analyzeThoughtLLM, generateOutlineLLM, hasGroqKey } from "@/lib/llmClient";
 import { DEMO_FRAMES } from "@/data/demo";
 import type { ArtStyle, OutputFormat, Scene, Storyboard, ThoughtAnalysis } from "@/types";
 import { cn } from "@/lib/utils";
@@ -26,6 +27,7 @@ export interface WizardData {
   audienceOverride: string;
   title: string;
   analysis?: ThoughtAnalysis;
+  analysisSource?: "groq" | "local";
   scenes: Scene[];
   style: ArtStyle;
   useDemoFrames: boolean;
@@ -54,6 +56,7 @@ export default function CreateWizard() {
     layout: "grid",
   });
   const projectId = useRef(`sb-${Date.now().toString(36)}`);
+  const [busy, setBusy] = useState<"analyze" | "outline" | null>(null);
 
   useEffect(() => {
     if (draftThought) {
@@ -84,24 +87,57 @@ export default function CreateWizard() {
     return sb;
   };
 
-  const runAnalysis = () => {
-    const a = analyzeThought(data.thought);
-    const sample = SAMPLE_THOUGHTS.find((s) => s.text === data.thought.trim());
-    patch({
-      analysis: a,
-      style: sample?.style ?? data.style,
-      useDemoFrames: Boolean(sample?.hasRealFrames),
-      title: titleFromThought(data.thought),
-    });
-    setStep(2);
+  const runAnalysis = async () => {
+    setBusy("analyze");
+    try {
+      let a: ThoughtAnalysis;
+      let source: "groq" | "local" = "local";
+      if (hasGroqKey()) {
+        try {
+          a = await analyzeThoughtLLM(data.thought);
+          source = "groq";
+        } catch (err) {
+          console.warn("Groq analysis failed, falling back to local engine:", err);
+          a = analyzeThought(data.thought);
+        }
+      } else {
+        a = analyzeThought(data.thought);
+      }
+      const sample = SAMPLE_THOUGHTS.find((s) => s.text === data.thought.trim());
+      patch({
+        analysis: a,
+        analysisSource: source,
+        style: sample?.style ?? data.style,
+        useDemoFrames: Boolean(sample?.hasRealFrames),
+        title: titleFromThought(data.thought),
+      });
+      setStep(2);
+    } finally {
+      setBusy(null);
+    }
   };
 
-  const runOutline = (sceneCount?: number) => {
+  const runOutline = async (sceneCount?: number) => {
     if (!data.analysis) return;
-    const scenes = generateOutline(data.thought, data.analysis, sceneCount);
-    patch({ scenes });
-    persist({ analysis: data.analysis, scenes, status: "outline", title: data.title || titleFromThought(data.thought) });
-    setStep(3);
+    setBusy("outline");
+    try {
+      let scenes: Scene[];
+      if (data.analysisSource === "groq" && hasGroqKey()) {
+        try {
+          scenes = await generateOutlineLLM(data.thought, data.analysis, sceneCount);
+        } catch (err) {
+          console.warn("Groq outline failed, falling back to local engine:", err);
+          scenes = generateOutline(data.thought, data.analysis, sceneCount);
+        }
+      } else {
+        scenes = generateOutline(data.thought, data.analysis, sceneCount);
+      }
+      patch({ scenes });
+      persist({ analysis: data.analysis, scenes, status: "outline", title: data.title || titleFromThought(data.thought) });
+      setStep(3);
+    } finally {
+      setBusy(null);
+    }
   };
 
   const finishGeneration = (style: ArtStyle) => {
@@ -121,9 +157,9 @@ export default function CreateWizard() {
   const content = useMemo(() => {
     switch (step) {
       case 1:
-        return <StepThought data={data} patch={patch} onAnalyze={runAnalysis} />;
+        return <StepThought data={data} patch={patch} busy={busy === "analyze"} onAnalyze={runAnalysis} />;
       case 2:
-        return <StepAnalysis data={data} onBack={() => setStep(1)} onOutline={runOutline} />;
+        return <StepAnalysis data={data} busy={busy === "outline"} onBack={() => setStep(1)} onOutline={runOutline} />;
       case 3:
         return (
           <StepOutline

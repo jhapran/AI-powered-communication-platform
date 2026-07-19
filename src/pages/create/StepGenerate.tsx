@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { ArrowLeft, ArrowRight, CheckCircle2, Dices, ImagePlay, Loader2, RefreshCw } from "lucide-react";
 import { STYLE_META, visualPromptFor } from "@/lib/aiEngine";
-import { sceneImage } from "@/lib/frameArt";
+import SceneImage from "@/components/SceneImage";
+import { getImageProvider, setImageProvider } from "@/lib/llmClient";
 import type { ArtStyle } from "@/types";
 import type { WizardData } from "./CreateWizard";
 import { cn } from "@/lib/utils";
@@ -17,6 +18,7 @@ type Phase = "pick" | "running" | "done";
 
 export default function StepGenerate({ data, patch, onBack, onDone }: Props) {
   const [style, setStyle] = useState<ArtStyle>(data.style);
+  const [aiFrames, setAiFrames] = useState(getImageProvider() === "pollinations");
   const [phase, setPhase] = useState<Phase>("pick");
   const [progress, setProgress] = useState<number[]>(() => data.scenes.map(() => 0));
   const [expandedPrompt, setExpandedPrompt] = useState<string | null>(null);
@@ -93,9 +95,45 @@ export default function StepGenerate({ data, patch, onBack, onDone }: Props) {
         {data.useDemoFrames && (
           <div className="mt-4 rounded-xl border border-emerald-400/25 bg-emerald-400/10 px-4 py-3 text-xs leading-relaxed text-emerald-200">
             This thought matches the bundled demo — its frames were rendered with a real text-to-image model using the
-            character-consistency prompts from the AI spec. Other thoughts get procedural concept frames generated locally.
+            character-consistency prompts from the AI spec.
           </div>
         )}
+        {/* Frame source toggle */}
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-white/10 bg-white/[0.02] px-4 py-3">
+          <div>
+            <div className="text-xs font-bold">Frame renderer</div>
+            <div className="text-[11px] text-muted-foreground">
+              {aiFrames
+                ? "Real AI images via Pollinations FLUX — free, no key. First load of each frame takes a few seconds."
+                : "Procedural SVG concept frames — instant, works fully offline."}
+            </div>
+          </div>
+          <div className="flex items-center gap-1.5">
+            {(
+              [
+                { on: true, label: "AI images (FLUX)" },
+                { on: false, label: "Procedural SVG" },
+              ] as const
+            ).map((o) => (
+              <button
+                key={o.label}
+                disabled={phase === "running"}
+                onClick={() => {
+                  setAiFrames(o.on);
+                  setImageProvider(o.on ? "pollinations" : "procedural");
+                }}
+                className={cn(
+                  "rounded-lg border px-3 py-2 text-xs font-semibold transition-all",
+                  aiFrames === o.on
+                    ? "btn-gradient border-transparent text-white"
+                    : "border-white/10 bg-white/[0.03] text-muted-foreground hover:border-white/25"
+                )}
+              >
+                {o.label}
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
 
       {/* Scene prompt list / progress */}
@@ -109,7 +147,7 @@ export default function StepGenerate({ data, patch, onBack, onDone }: Props) {
                 {/* thumbnail */}
                 <div className="relative h-20 w-32 shrink-0 overflow-hidden rounded-lg border border-white/10 bg-black/30">
                   {phase === "done" || (phase === "running" && done) ? (
-                    <img src={sceneImage(previewScene(i), style, i)} alt={s.title} className="h-full w-full object-cover" />
+                    <SceneImage scene={previewScene(i)} style={style} index={i} alt={s.title} className="h-full w-full object-cover" />
                   ) : phase === "running" && p > 0 ? (
                     <div className="shimmer h-full w-full bg-white/[0.04]" />
                   ) : (

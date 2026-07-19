@@ -1,5 +1,6 @@
 import type { Storyboard } from "@/types";
-import { sceneImage } from "./frameArt";
+import { sceneFrameDataUrl, sceneImage } from "./frameArt";
+import { getImageProvider } from "./llmClient";
 import { INTENT_LABEL } from "./aiEngine";
 
 function loadImage(src: string): Promise<HTMLImageElement> {
@@ -10,6 +11,26 @@ function loadImage(src: string): Promise<HTMLImageElement> {
     img.onerror = reject;
     img.src = src;
   });
+}
+
+// Pollinations' free tier rate-limits concurrent requests, so frames are
+// fetched one at a time; a frame that fails remotely falls back to the
+// local procedural SVG so the export always completes.
+async function loadSceneImage(sb: Storyboard, i: number): Promise<HTMLImageElement> {
+  const s = sb.scenes[i];
+  const remote = !s.imageUrl && getImageProvider() === "pollinations";
+  const candidates = remote
+    ? [sceneImage(s, sb.style, i), `${sceneImage(s, sb.style, i)}&retry=1`, sceneFrameDataUrl(s, sb.style, i + 1)]
+    : [sceneImage(s, sb.style, i)];
+  let lastErr: unknown;
+  for (const url of candidates) {
+    try {
+      return await loadImage(url);
+    } catch (err) {
+      lastErr = err;
+    }
+  }
+  throw lastErr;
 }
 
 function wrapText(ctx: CanvasRenderingContext2D, text: string, maxWidth: number): string[] {
@@ -71,8 +92,11 @@ export async function exportStoryboardPNG(sb: Storyboard): Promise<void> {
     headerH - 12
   );
 
-  // frames
-  const imgs = await Promise.all(sb.scenes.map((s, i) => loadImage(sceneImage(s, sb.style, i))));
+  // frames (sequential — see loadSceneImage)
+  const imgs: HTMLImageElement[] = [];
+  for (let i = 0; i < sb.scenes.length; i++) {
+    imgs.push(await loadSceneImage(sb, i));
+  }
   for (let i = 0; i < sb.scenes.length; i++) {
     const col = i % cols;
     const row = Math.floor(i / cols);

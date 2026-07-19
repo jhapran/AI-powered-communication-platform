@@ -5,7 +5,7 @@ import {
 import { useApp } from "@/lib/store";
 import { CapabilityCard, Phase2Header, Phase2Notice } from "@/components/Phase2";
 import AnimaticPlayer from "@/components/AnimaticPlayer";
-import { sceneImage } from "@/lib/frameArt";
+import SceneImage from "@/components/SceneImage";
 import type { Storyboard } from "@/types";
 
 const PIPELINE = [
@@ -45,7 +45,7 @@ export default function Video() {
               onClick={() => setPlaying(p)}
               className="group relative overflow-hidden rounded-2xl border border-white/10 text-left transition-all hover:-translate-y-0.5 hover:border-primary/40"
             >
-              <img src={sceneImage(p.scenes[0], p.style, 0)} alt={p.title} className="aspect-[16/9] w-full object-cover" />
+              <SceneImage scene={p.scenes[0]} style={p.style} index={0} alt={p.title} className="aspect-[16/9] w-full object-cover" />
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent" />
               <div className="absolute inset-0 flex items-center justify-center opacity-0 transition-opacity group-hover:opacity-100">
                 <div className="btn-gradient rounded-full p-4 text-white shadow-2xl">

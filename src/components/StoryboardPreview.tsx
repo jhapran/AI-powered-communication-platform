@@ -1,5 +1,5 @@
 import { Clock, ArrowRight } from "lucide-react";
-import { sceneImage } from "@/lib/frameArt";
+import SceneImage from "@/components/SceneImage";
 import { EMOTION_COLORS } from "@/lib/aiEngine";
 import type { Storyboard } from "@/types";
 import { cn } from "@/lib/utils";
@@ -15,7 +15,7 @@ export default function StoryboardPreview({ sb, layout }: { sb: Storyboard; layo
             <div key={s.id} className="flex items-center">
               <div className="w-72 shrink-0 overflow-hidden rounded-xl border border-white/10 bg-black/30">
                 <div className="relative">
-                  <img src={sceneImage(s, sb.style, i)} alt={s.title} className="aspect-[3/2] w-full object-cover" />
+                  <SceneImage scene={s} style={sb.style} index={i} alt={s.title} className="aspect-[3/2] w-full object-cover" />
                   <span className="absolute left-2 top-2 rounded-full bg-black/70 px-2 py-0.5 text-[10px] font-bold text-white">
                     {String(i + 1).padStart(2, "0")}
                   </span>
@@ -54,7 +54,7 @@ export default function StoryboardPreview({ sb, layout }: { sb: Storyboard; layo
             )}
           >
             <div className="relative overflow-hidden rounded">
-              <img src={sceneImage(s, sb.style, i)} alt={s.title} className="w-full object-cover" />
+              <SceneImage scene={s} style={sb.style} index={i} alt={s.title} className="w-full object-cover" />
               <span className="absolute left-2 top-2 rounded bg-black/80 px-1.5 py-0.5 text-[10px] font-black uppercase text-white">
                 #{i + 1}
               </span>
@@ -75,7 +75,7 @@ export default function StoryboardPreview({ sb, layout }: { sb: Storyboard; layo
       {sb.scenes.map((s, i) => (
         <div key={s.id} className="overflow-hidden rounded-xl border border-white/10 bg-black/30">
           <div className="relative">
-            <img src={sceneImage(s, sb.style, i)} alt={s.title} className="aspect-[3/2] w-full object-cover" />
+            <SceneImage scene={s} style={sb.style} index={i} alt={s.title} className="aspect-[3/2] w-full object-cover" />
             <span className="btn-gradient absolute left-3 top-3 rounded-full px-2.5 py-1 text-[10px] font-extrabold text-white">
               {String(i + 1).padStart(2, "0")}
             </span>

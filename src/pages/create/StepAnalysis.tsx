@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import {
-  ArrowLeft, ArrowRight, BrainCircuit, CheckCircle2, ShieldCheck, Target, Users, MessageSquareQuote, Hash,
+  ArrowLeft, ArrowRight, BrainCircuit, CheckCircle2, Loader2, ShieldCheck, Target, Users, MessageSquareQuote, Hash,
 } from "lucide-react";
 import { INTENT_LABEL } from "@/lib/aiEngine";
 import type { WizardData } from "./CreateWizard";
@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 
 interface Props {
   data: WizardData;
+  busy?: boolean;
   onBack: () => void;
   onOutline: (sceneCount?: number) => void;
 }
@@ -20,7 +21,7 @@ function ConfBar({ value, color = "bg-primary" }: { value: number; color?: strin
   );
 }
 
-export default function StepAnalysis({ data, onBack, onOutline }: Props) {
+export default function StepAnalysis({ data, busy, onBack, onOutline }: Props) {
   const a = data.analysis!;
   const [completed, setCompleted] = useState(0);
   const [sceneCount, setSceneCount] = useState(data.useDemoFrames ? 6 : a.recommendedScenes);
@@ -44,6 +45,16 @@ export default function StepAnalysis({ data, onBack, onOutline }: Props) {
         <div className="mb-4 flex items-center gap-2 text-sm font-bold">
           <BrainCircuit className="h-4 w-4 text-primary" /> AI pipeline
           {!done && <span className="text-xs font-medium text-muted-foreground">running modules…</span>}
+          <span
+            className={cn(
+              "ml-auto rounded-full border px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider",
+              data.analysisSource === "groq"
+                ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-300"
+                : "border-white/15 bg-white/[0.04] text-muted-foreground"
+            )}
+          >
+            {data.analysisSource === "groq" ? "Groq · Llama 3.3 70B" : "Local simulator"}
+          </span>
         </div>
         <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-5">
           {a.pipeline.map((m, i) => {
@@ -175,13 +186,21 @@ export default function StepAnalysis({ data, onBack, onOutline }: Props) {
         </button>
         <button
           onClick={() => onOutline(sceneCount)}
-          disabled={!done}
+          disabled={!done || busy}
           className={cn(
             "flex items-center gap-2 rounded-xl px-6 py-3 text-sm font-bold transition-all",
-            done ? "btn-gradient text-white" : "cursor-not-allowed border border-white/10 bg-white/[0.03] text-muted-foreground"
+            done && !busy ? "btn-gradient text-white" : "cursor-not-allowed border border-white/10 bg-white/[0.03] text-muted-foreground"
           )}
         >
-          Generate storyboard outline <ArrowRight className="h-4 w-4" />
+          {busy ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" /> Writing scenes with AI…
+            </>
+          ) : (
+            <>
+              Generate storyboard outline <ArrowRight className="h-4 w-4" />
+            </>
+          )}
         </button>
       </div>
     </div>

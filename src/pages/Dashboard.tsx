@@ -5,7 +5,7 @@ import {
 } from "lucide-react";
 import { useApp } from "@/lib/store";
 import { SAMPLE_THOUGHTS } from "@/lib/aiEngine";
-import { sceneImage } from "@/lib/frameArt";
+import SceneImage from "@/components/SceneImage";
 import { STATUS_LABEL, type StoryboardStatus } from "@/types";
 
 const STATUS_STYLE: Record<StoryboardStatus, string> = {
@@ -127,8 +127,10 @@ export default function Dashboard() {
               style={{ animationDelay: `${i * 0.08}s` }}
             >
               <div className="relative aspect-[3/2] overflow-hidden bg-black/40">
-                <img
-                  src={sceneImage(p.scenes[0], p.style, 0)}
+                <SceneImage
+                  scene={p.scenes[0]}
+                  style={p.style}
+                  index={0}
                   alt={p.title}
                   className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                 />
