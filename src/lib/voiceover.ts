@@ -12,6 +12,9 @@ import { getGroqApiKey, hasGroqKey } from "./llmClient";
 const GROQ_TTS_URL = "https://api.groq.com/openai/v1/audio/speech";
 const TTS_MODEL = "canopylabs/orpheus-v1-english";
 const TTS_VOICE = "autumn";
+// Slightly below 1.0 — keeps the narration calm and intelligible; both
+// the Groq voice and the browser fallback sound rushed at full speed.
+const NARRATION_RATE = 0.92;
 
 const audioCache = new Map<string, string>(); // narration text -> object URL
 let currentAudio: HTMLAudioElement | null = null;
@@ -63,6 +66,7 @@ export async function speakScene(text: string): Promise<void> {
         currentResolve = resolve;
         const audio = new Audio(url);
         currentAudio = audio;
+        audio.playbackRate = NARRATION_RATE;
         audio.onended = () => resolve();
         audio.onerror = () => resolve();
         audio.play().catch(() => resolve());
@@ -79,7 +83,7 @@ export async function speakScene(text: string): Promise<void> {
   await new Promise<void>((resolve) => {
     currentResolve = resolve;
     const utterance = new SpeechSynthesisUtterance(text);
-    utterance.rate = 1.03;
+    utterance.rate = NARRATION_RATE;
     utterance.pitch = 1;
     utterance.onend = () => resolve();
     utterance.onerror = () => resolve();

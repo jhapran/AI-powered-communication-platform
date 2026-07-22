@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { pollinationsImageUrl, sceneFrameDataUrl, sceneImage } from "@/lib/frameArt";
+import { fetchAndCacheFrame, getCachedFrameUrl } from "@/lib/imageCache";
 import { getImageProvider } from "@/lib/llmClient";
 import type { ArtStyle, Scene } from "@/types";
 import { cn } from "@/lib/utils";
@@ -7,9 +8,10 @@ import { cn } from "@/lib/utils";
 /* ------------------------------------------------------------------ */
 /*  Scene frame <img> that respects Pollinations' free-tier limit of   */
 /*  ~1 concurrent request per IP. Remote loads are serialized through  */
-/*  a module-level queue; failures are retried with backoff and        */
-/*  ultimately fall back to the local procedural SVG frame so a        */
-/*  storyboard never shows broken images.                              */
+/*  a module-level queue; fetched frames are persisted in CacheStorage */
+/*  so revisiting the app doesn't re-download them. Failures are       */
+/*  retried with backoff and ultimately fall back to the local         */
+/*  procedural SVG frame so a storyboard never shows broken images.    */
 /* ------------------------------------------------------------------ */
 
 const queue: Array<() => void> = [];
@@ -63,7 +65,25 @@ export default function SceneImage({ scene, style, index, alt, className, imgSty
       }
       holdsSlot.current = true;
       const url = pollinationsImageUrl(scene, style);
-      setSrc(attempt.current > 0 ? `${url}&retry=${attempt.current}` : url);
+      const remoteUrl = attempt.current > 0 ? `${url}&retry=${attempt.current}` : url;
+      fetchAndCacheFrame(remoteUrl)
+        .then((objectUrl) => {
+          if (cancelled.current) {
+            URL.revokeObjectURL(objectUrl);
+            releaseSlot();
+            return;
+          }
+          setSrc(objectUrl); // slot released by <img> onLoad
+        })
+        .catch(() => {
+          if (cancelled.current) {
+            releaseSlot();
+            return;
+          }
+          // Fetch failed (e.g. rate-limited) — let the <img> try the URL
+          // directly; its onError drives the retry/fallback path below.
+          setSrc(remoteUrl);
+        });
     });
     pump();
   };
@@ -76,7 +96,12 @@ export default function SceneImage({ scene, style, index, alt, className, imgSty
     }
     attempt.current = 0;
     setSrc(null);
-    enqueue();
+    // Persistent cache first — avoids re-downloading frames on every app start.
+    getCachedFrameUrl(pollinationsImageUrl(scene, style)).then((cached) => {
+      if (cancelled.current) return;
+      if (cached) setSrc(cached);
+      else enqueue();
+    });
     return () => {
       cancelled.current = true;
       clearTimeout(retryTimer.current);

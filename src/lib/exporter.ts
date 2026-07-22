@@ -1,5 +1,6 @@
 import type { Storyboard } from "@/types";
 import { sceneFrameDataUrl, sceneImage } from "./frameArt";
+import { getCachedFrameUrl } from "./imageCache";
 import { getImageProvider } from "./llmClient";
 import { INTENT_LABEL } from "./aiEngine";
 
@@ -19,9 +20,14 @@ function loadImage(src: string): Promise<HTMLImageElement> {
 async function loadSceneImage(sb: Storyboard, i: number): Promise<HTMLImageElement> {
   const s = sb.scenes[i];
   const remote = !s.imageUrl && getImageProvider() === "pollinations";
-  const candidates = remote
-    ? [sceneImage(s, sb.style, i), `${sceneImage(s, sb.style, i)}&retry=1`, sceneFrameDataUrl(s, sb.style, i + 1)]
-    : [sceneImage(s, sb.style, i)];
+  let candidates: string[];
+  if (remote) {
+    const url = sceneImage(s, sb.style, i);
+    const cached = await getCachedFrameUrl(url);
+    candidates = [...(cached ? [cached] : []), url, `${url}&retry=1`, sceneFrameDataUrl(s, sb.style, i + 1)];
+  } else {
+    candidates = [sceneImage(s, sb.style, i)];
+  }
   let lastErr: unknown;
   for (const url of candidates) {
     try {
