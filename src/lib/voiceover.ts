@@ -1,4 +1,5 @@
 import { getGroqApiKey, hasGroqKey } from "./llmClient";
+import { duckMusic } from "./soundtrack";
 
 /* ------------------------------------------------------------------ */
 /*  Voice-over narration                                               */
@@ -57,37 +58,42 @@ export async function speakScene(text: string): Promise<void> {
   stopVoiceover();
   if (!text.trim()) return;
   const id = callId;
+  duckMusic(true); // drop the soundtrack under the narration
 
-  if (hasGroqKey()) {
-    try {
-      const url = await groqSpeechUrl(text);
-      if (id !== callId) return; // superseded while generating
-      await new Promise<void>((resolve) => {
-        currentResolve = resolve;
-        const audio = new Audio(url);
-        currentAudio = audio;
-        audio.playbackRate = NARRATION_RATE;
-        audio.onended = () => resolve();
-        audio.onerror = () => resolve();
-        audio.play().catch(() => resolve());
-      });
-      if (currentAudio) currentAudio = null;
-      currentResolve = null;
-      return;
-    } catch (err) {
-      console.warn("Groq TTS failed, falling back to browser voice:", err);
+  try {
+    if (hasGroqKey()) {
+      try {
+        const url = await groqSpeechUrl(text);
+        if (id !== callId) return; // superseded while generating
+        await new Promise<void>((resolve) => {
+          currentResolve = resolve;
+          const audio = new Audio(url);
+          currentAudio = audio;
+          audio.playbackRate = NARRATION_RATE;
+          audio.onended = () => resolve();
+          audio.onerror = () => resolve();
+          audio.play().catch(() => resolve());
+        });
+        if (currentAudio) currentAudio = null;
+        currentResolve = null;
+        return;
+      } catch (err) {
+        console.warn("Groq TTS failed, falling back to browser voice:", err);
+      }
     }
-  }
 
-  if (id !== callId || !("speechSynthesis" in window)) return;
-  await new Promise<void>((resolve) => {
-    currentResolve = resolve;
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.rate = NARRATION_RATE;
-    utterance.pitch = 1;
-    utterance.onend = () => resolve();
-    utterance.onerror = () => resolve();
-    window.speechSynthesis.speak(utterance);
-  });
-  currentResolve = null;
+    if (id !== callId || !("speechSynthesis" in window)) return;
+    await new Promise<void>((resolve) => {
+      currentResolve = resolve;
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.rate = NARRATION_RATE;
+      utterance.pitch = 1;
+      utterance.onend = () => resolve();
+      utterance.onerror = () => resolve();
+      window.speechSynthesis.speak(utterance);
+    });
+    currentResolve = null;
+  } finally {
+    duckMusic(false); // restore the soundtrack level
+  }
 }

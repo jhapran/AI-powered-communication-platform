@@ -45,7 +45,23 @@ let padFilter: BiquadFilterNode | null = null;
 let padVoices: PadVoice[] = [];
 let melodyTimer: ReturnType<typeof setTimeout> | undefined;
 let playing = false;
+let ducked = false;
 let currentEmotion = "Curiosity";
+
+// Background ambience levels — quiet enough to sit under a voice-over;
+// ducked further while narration is actually speaking.
+const MUSIC_LEVEL = 0.4;
+const DUCK_LEVEL = 0.1;
+
+function applyLevel(c: AudioContext, fade = 0.9): void {
+  master!.gain.setTargetAtTime(ducked ? DUCK_LEVEL : MUSIC_LEVEL, c.currentTime, fade);
+}
+
+/** Lower the music while narration plays (true) and restore it after (false). */
+export function duckMusic(on: boolean): void {
+  ducked = on;
+  if (ctx && playing) applyLevel(ctx, on ? 0.25 : 1.2);
+}
 
 function makeImpulseResponse(c: AudioContext, seconds = 2.8, decay = 2.6): AudioBuffer {
   const rate = c.sampleRate;
@@ -173,7 +189,7 @@ export function startMusic(emotion: string): void {
   }
   playing = true;
   buildPad(moodFor(emotion).chord);
-  master!.gain.setTargetAtTime(1.0, c.currentTime, 1.8); // gentle fade in
+  applyLevel(c, 1.8); // gentle fade in
   scheduleMelody();
 }
 
