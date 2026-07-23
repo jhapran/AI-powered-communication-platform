@@ -22,6 +22,14 @@ let currentAudio: HTMLAudioElement | null = null;
 let currentResolve: (() => void) | null = null;
 let callId = 0;
 
+// Hard cap on how long a narration may hold the animatic. If the audio
+// engine stalls (no `onended` / `onend` — e.g. speechSynthesis quirks on
+// some Linux desktops), the promise still resolves so playback moves on.
+function narrationTimeoutMs(text: string): number {
+  const words = text.trim().split(/\s+/).length;
+  return Math.min(30000, (words / 2.4) * (1000 / NARRATION_RATE) + 2500);
+}
+
 async function groqSpeechUrl(text: string): Promise<string> {
   const cached = audioCache.get(text);
   if (cached) return cached;
@@ -67,12 +75,18 @@ export async function speakScene(text: string): Promise<void> {
         if (id !== callId) return; // superseded while generating
         await new Promise<void>((resolve) => {
           currentResolve = resolve;
+          let timer: ReturnType<typeof setTimeout>;
+          const finish = () => {
+            clearTimeout(timer);
+            resolve();
+          };
+          timer = setTimeout(finish, narrationTimeoutMs(text));
           const audio = new Audio(url);
           currentAudio = audio;
           audio.playbackRate = NARRATION_RATE;
-          audio.onended = () => resolve();
-          audio.onerror = () => resolve();
-          audio.play().catch(() => resolve());
+          audio.onended = finish;
+          audio.onerror = finish;
+          audio.play().catch(finish);
         });
         if (currentAudio) currentAudio = null;
         currentResolve = null;
@@ -85,12 +99,23 @@ export async function speakScene(text: string): Promise<void> {
     if (id !== callId || !("speechSynthesis" in window)) return;
     await new Promise<void>((resolve) => {
       currentResolve = resolve;
+      let timer: ReturnType<typeof setTimeout>;
+      const finish = () => {
+        clearTimeout(timer);
+        resolve();
+      };
+      timer = setTimeout(finish, narrationTimeoutMs(text));
       const utterance = new SpeechSynthesisUtterance(text);
       utterance.rate = NARRATION_RATE;
       utterance.pitch = 1;
-      utterance.onend = () => resolve();
-      utterance.onerror = () => resolve();
-      window.speechSynthesis.speak(utterance);
+      utterance.onend = finish;
+      utterance.onerror = finish;
+      // Chrome can silently drop an utterance spoken immediately after
+      // speechSynthesis.cancel() — give the engine a beat first.
+      setTimeout(() => {
+        if (id !== callId) return; // superseded before the utterance started
+        window.speechSynthesis.speak(utterance);
+      }, 60);
     });
     currentResolve = null;
   } finally {

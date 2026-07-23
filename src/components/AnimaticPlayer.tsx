@@ -15,7 +15,7 @@ export default function AnimaticPlayer({ sb, onClose }: Props) {
   const [index, setIndex] = useState(0);
   const [playing, setPlaying] = useState(true);
   const [voiceOn, setVoiceOn] = useState(true);
-  const [musicOn, setMusicOn] = useState(true);
+  const [musicOn, setMusicOn] = useState(false);
   const [voiceDone, setVoiceDone] = useState(true); // has the current scene's narration finished?
   const [elapsed, setElapsed] = useState(0); // seconds within current scene
   const total = sb.scenes.reduce((a, s) => a + s.durationSec, 0);
@@ -65,9 +65,13 @@ export default function AnimaticPlayer({ sb, onClose }: Props) {
     const seq = ++voiceSeq.current;
     if (playing && voiceOn) {
       setVoiceDone(false);
-      void speakScene(scene.narration).then(() => {
-        if (voiceSeq.current === seq) setVoiceDone(true);
-      });
+      void speakScene(scene.narration)
+        .catch(() => {
+          /* narration failed — keep the animatic moving */
+        })
+        .then(() => {
+          if (voiceSeq.current === seq) setVoiceDone(true);
+        });
     } else {
       stopVoiceover();
       setVoiceDone(true);
